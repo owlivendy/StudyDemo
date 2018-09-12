@@ -10,4 +10,6 @@
 
 @interface CTDisplayView : UIView
 
+@property (nonatomic, copy) NSAttributedString *attributeText;
+
 @end

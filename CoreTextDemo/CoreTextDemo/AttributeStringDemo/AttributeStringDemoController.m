@@ -16,8 +16,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     
-    UITextView *testLb = [[UITextView alloc] initWithFrame:(CGRect){10,20,300,200}];
+    UITextView *testLb = [[UITextView alloc] initWithFrame:(CGRect){10,100,300,200}];
     testLb.delegate = self;
     testLb.editable = NO;
     testLb.backgroundColor = [UIColor yellowColor];
@@ -45,7 +46,7 @@
     
     
     [attriText appendAttributedString:[[NSAttributedString alloc] initWithString:@"阿斯达达到企鹅请求爱迪生ad强无敌阿斯达ad切切任务\n"
-                                       "阿斯达切切为睡觉觉就前两位偶读请我觉就是垃圾诶就前两位偶读请我\n" attributes:@{NSParagraphStyleAttributeName:paragraphStyle}]];
+                                       "阿斯达切切为睡觉觉就前两位偶读请我觉就是垃圾诶就前两位偶读请我\n" attributes:@{NSParagraphStyleAttributeName:paragraphStyle,NSStrikethroughStyleAttributeName:@(1)}]];
     
     testLb.attributedText = attriText;
 }
