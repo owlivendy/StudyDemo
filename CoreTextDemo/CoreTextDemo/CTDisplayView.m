@@ -9,7 +9,18 @@
 #import "CTDisplayView.h"
 #import <CoreText/CoreText.h>
 
+@interface CTDisplayView()
+{
+    CTFrameRef _ctframe;
+}
+@end
+
 @implementation CTDisplayView
+
+- (void)dealloc
+{
+    CFRelease(_ctframe);
+}
 
 //core text draw
 - (void)drawRect:(CGRect)rect {
@@ -18,7 +29,7 @@
     CGContextRef context = UIGraphicsGetCurrentContext();
     
     // 步骤 2
-    CGContextSetTextMatrix(context, CGAffineTransformIdentity);
+//    CGContextSetTextMatrix(context, CGAffineTransformIdentity);
     CGContextTranslateCTM(context, 0, self.bounds.size.height);
     CGContextScaleCTM(context, 1.0, -1.0);
     
@@ -37,7 +48,6 @@
     // 步骤 4 
 //    NSAttributedString *attString = [[NSAttributedString alloc] initWithString:@"Hello World! "];
     
-    
     //create framesetter
     CTFramesetterRef framesetter =
     CTFramesetterCreateWithAttributedString((CFAttributedStringRef)self.attributeText);
@@ -46,12 +56,13 @@
     CTFrameRef frame =
     CTFramesetterCreateFrame(framesetter,
                              CFRangeMake(0, [self.attributeText length]), drawingpath, NULL);
+    CFRetain(frame);
+    _ctframe = frame;
     
     ///get CTLine array
     CFArrayRef ctlines = CTFrameGetLines(frame);
     CFIndex linesCount = CFArrayGetCount(ctlines);
     CGPoint lineOfOrigins[linesCount];
-//    CGPoint *a = &lineOfOrigins;
     CTFrameGetLineOrigins(frame, CFRangeMake(0, 0), lineOfOrigins);
     for (int i = 0; i < linesCount; i++) {
         CTLineRef line = CFArrayGetValueAtIndex(ctlines, i);
@@ -60,7 +71,7 @@
         //绘制
         CGContextSetTextPosition(context, lineofOrigin.x, lineofOrigin.y);
 //        CTLineDraw(line, context);
-        [self drawline:line context:context];
+        [self drawline:line context:context lineofOrigin:lineofOrigin];
     }
     
     // 步骤 5
@@ -72,18 +83,38 @@
     CFRelease(framesetter);
 }
 
-- (void)drawline:(CTLineRef)line context:(CGContextRef)context {
+- (void)drawline:(CTLineRef)line context:(CGContextRef)context lineofOrigin:(CGPoint)lineofOrigin {
     CFArrayRef runs = CTLineGetGlyphRuns(line);
     CFIndex runCount = CFArrayGetCount(runs);
     
 //    ctrunget
     for (int i = 0; i < runCount; i++) {
         CTRunRef run = CFArrayGetValueAtIndex(runs, i);
-        CFRange range = CTRunGetStringRange(run);
-//        ctrungetgl
-        NSLog(@"range:%ld,%ld",range.location,range.length);
-//        CGContextSetTextPosition(context, lineofOrigin.x, lineofOrigin.y);
+        //draw
         CTRunDraw(run, context, CFRangeMake(0, 0));
+        
+        //add img icon
+        NSDictionary *runAttributes = (NSDictionary *)CTRunGetAttributes(run);
+        CTRunDelegateRef delegate = (__bridge CTRunDelegateRef)[runAttributes valueForKey:(id)kCTRunDelegateAttributeName];
+        if (delegate == nil) {
+            continue;
+        }
+        NSDictionary * metaDic = CTRunDelegateGetRefCon(delegate);
+        if (![metaDic isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
+        CGRect runBounds;
+        CGFloat ascent;
+        CGFloat descent;
+        runBounds.size.width = CTRunGetTypographicBounds(run, CFRangeMake(0, 0), &ascent, &descent, NULL);
+        runBounds.size.height = ascent + descent;
+        CGFloat xOffset = CTLineGetOffsetForStringIndex(line, CTRunGetStringRange(run).location, NULL);
+        runBounds.origin.x = lineofOrigin.x + xOffset;
+        runBounds.origin.y = lineofOrigin.y;
+        
+        UIImage *appadd = [UIImage imageNamed:@"app_add"];
+        NSLog(@"%@",NSStringFromCGRect(runBounds));
+        CGContextDrawImage(context, runBounds, appadd.CGImage);
     }
 }
 
